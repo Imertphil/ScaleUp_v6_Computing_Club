@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="CTF 101 beginner challenge board. Solve web and crypto challenges in your browser.">
+<title>CTF 101 Challenge Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#121923; --panel2:#18212e; --line:#243142;
+    --text:#d8e2ee; --dim:#8696aa; --green:#3cf28c; --amber:#ffc24a; --pink:#ff5d8f; --cyan:#4ad7ff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:"Space Grotesk",system-ui,sans-serif}
+  body{background-image:radial-gradient(circle at 1px 1px,#1a2330 1px,transparent 0);background-size:22px 22px}
+  .wrap{max-width:1040px;margin:0 auto;padding:28px 18px 60px}
+  header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px}
+  h1{font-family:"JetBrains Mono",monospace;font-weight:800;font-size:clamp(26px,4.5vw,40px);margin:0;letter-spacing:-1px}
+  h1 .g{color:var(--green)} h1 .cur{display:inline-block;width:.55em;height:.9em;background:var(--green);vertical-align:-2px;animation:b 1s steps(1) infinite;margin-left:4px}
+  @keyframes b{50%{opacity:0}}
+  .sub{color:var(--dim);margin:6px 0 0;font-size:15px}
+  .score{font-family:"JetBrains Mono",monospace;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;min-width:220px}
+  .score .big{font-size:30px;font-weight:800;color:var(--amber)}
+  .score .small{color:var(--dim);font-size:12px}
+  .bar{height:8px;background:var(--panel2);border-radius:6px;overflow:hidden;margin-top:8px}
+  .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--cyan));transition:width .5s}
+  .rules{background:var(--panel);border:1px dashed var(--line);border-radius:12px;padding:14px 16px;font-size:14px;color:var(--dim);margin-bottom:22px;line-height:1.55}
+  .rules b{color:var(--text)} code,kbd{font-family:"JetBrains Mono",monospace;font-size:.92em;background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--cyan)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px;position:relative;transition:border-color .3s, transform .2s}
+  .card:hover{transform:translateY(-2px)}
+  .card.solved{border-color:var(--green);box-shadow:0 0 0 1px var(--green) inset}
+  .card.solved::after{content:"SOLVED";position:absolute;top:14px;right:14px;font:800 11px "JetBrains Mono",monospace;color:var(--bg);background:var(--green);padding:3px 8px;border-radius:5px;letter-spacing:1px}
+  .tag{font:700 11px "JetBrains Mono",monospace;letter-spacing:1px;text-transform:uppercase;color:var(--dim)}
+  .tag .pts{color:var(--amber)}
+  .card h2{margin:0;font-size:20px}
+  .card p{margin:0;font-size:14.5px;line-height:1.5;color:#b8c5d4}
+  .payload{font-family:"JetBrains Mono",monospace;background:#070a0e;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13.5px;word-break:break-all;color:var(--green)}
+  .hint{font-size:13px;color:var(--dim)} .hint summary{cursor:pointer;color:var(--pink);font-weight:700}
+  .hint div{margin-top:6px;line-height:1.5}
+  form.sub{display:flex;gap:8px;margin-top:auto}
+  form.sub input{flex:1;min-width:0;background:#070a0e;border:1px solid var(--line);border-radius:8px;padding:9px 10px;color:var(--text);font-family:"JetBrains Mono",monospace;font-size:13px}
+  form.sub input:focus{outline:2px solid var(--cyan);border-color:transparent}
+  button{font-family:"JetBrains Mono",monospace;font-weight:700;border:0;border-radius:8px;padding:9px 14px;cursor:pointer;background:var(--green);color:#04120a}
+  button:disabled{background:#2a3442;color:#5d6b7c;cursor:not-allowed}
+  .msg{font:13px "JetBrains Mono",monospace;min-height:18px}
+  .msg.ok{color:var(--green)} .msg.bad{color:var(--pink)}
+  .card p.whisper{color:var(--panel);font-size:13px;user-select:text}
+  .card p.whisper::selection{background:var(--amber);color:#000}
+  .vault{display:flex;flex-direction:column;gap:8px;background:var(--panel2);border-radius:10px;padding:12px}
+  .vault label{font-size:12px;color:var(--dim)}
+  .vault input{background:#070a0e;border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--text);font-family:"JetBrains Mono",monospace}
+  .reveal{font:700 13px "JetBrains Mono",monospace;color:var(--amber);word-break:break-all;min-height:18px}
+  .win{display:none;margin-top:24px;text-align:center;border:2px solid var(--amber);border-radius:16px;padding:22px;background:linear-gradient(135deg,#1d1606,#121923)}
+  .win.show{display:block;animation:pop .5s}
+  @keyframes pop{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
+  .win h2{font-family:"JetBrains Mono",monospace;color:var(--amber);margin:0 0 6px;font-size:26px}
+  .win .code{font:800 22px "JetBrains Mono",monospace;color:var(--green);letter-spacing:2px}
+  footer{margin-top:30px;color:var(--dim);font-size:12.5px;text-align:center}
+  .reset{background:transparent;color:var(--dim);border:1px solid var(--line);font-size:11px;padding:5px 10px;margin-left:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1><span class="g">&gt;</span> CTF_101<span class="cur"></span></h1>
+      <p class="sub">Computing &amp; Cyber Security Club · Intro workshop · all you need is a browser</p>
+    </div>
+    <div class="score">
+      <div class="small">SCORE</div>
+      <div class="big"><span id="pts">0</span><span style="font-size:16px;color:var(--dim)"> / 700</span></div>
+      <div class="small"><span id="cnt">0</span> of 6 challenges solved</div>
+      <div class="bar"><i id="barfill"></i></div>
+    </div>
+  </header>
+
+  <div class="rules">
+    <b>How it works.</b> Every challenge hides a flag that looks like <code>ECC{some_text_here}</code>. Find it, paste it into the box, hit Submit.
+    Your toolkit: <kbd>Ctrl</kbd>+<kbd>A</kbd> (select all), <b>right-click → Inspect</b> (or <kbd>F12</kbd>), and the free website <b>CyberChef</b> (gchq.github.io/CyberChef).
+    Working in pairs is encouraged. <b>Rule:</b> only hack this page. Don't attack the network, the school, or each other.
+  </div>
+
+  <div class="grid">
+
+    <!-- ===== Challenge 0 ===== -->
+    <div class="card" data-id="c0" data-pts="0">
+      <div class="tag">Warm-up · <span class="pts">0 pts</span></div>
+      <h2>00 · Hello, Hacker</h2>
+      <p>Practice round. Copy this flag into the box and submit it so you know how it works.</p>
+      <div class="payload">ECC{w3lc0me_h4ck3r}</div>
+      <form class="sub"><input placeholder="ECC{...}" autocomplete="off" spellcheck="false"><button>Submit</button></form>
+      <div class="msg"></div>
+    </div>
+
+    <!-- ===== Challenge 1 ===== -->
+    <div class="card" data-id="c1" data-pts="50">
+      <div class="tag">Web · <span class="pts">50 pts</span></div>
+      <h2>01 · Invisible Ink</h2>
+      <p>There is a flag in this box. You just can't see it. Yet.</p>
+      <p class="whisper">psst... ECC{h1dd3n_1n_pl41n_s1ght}</p>
+      <details class="hint"><summary>Hint</summary><div>Text can be the same color as the background. What happens when you highlight everything on the page?</div></details>
+      <form class="sub"><input placeholder="ECC{...}" autocomplete="off" spellcheck="false"><button>Submit</button></form>
+      <div class="msg"></div>
+    </div>
+
+    <!-- ===== Challenge 2 ===== -->
+    <div class="card" data-id="c2" data-pts="100">
+      <div class="tag">Web · <span class="pts">100 pts</span></div>
+      <h2>02 · Developer's Diary</h2>
+      <p>The developer who built this page left a note for themselves. It never shows up on screen, but the browser still downloaded it.</p>
+      <!-- TODO: remove before launch!!! flag = ECC{c0mm3nts_t3ll_t4l3s} -->
+      <details class="hint"><summary>Hint</summary><div>Press <kbd>Ctrl</kbd>+<kbd>U</kbd> to view the page source, or right-click this box → <b>Inspect</b>. Look for green text. That's an HTML comment: <code>&lt;!-- like this --&gt;</code></div></details>
+      <form class="sub"><input placeholder="ECC{...}" autocomplete="off" spellcheck="false"><button>Submit</button></form>
+      <div class="msg"></div>
+    </div>
+
+    <!-- ===== Challenge 3 ===== -->
+    <div class="card" data-id="c3" data-pts="100">
+      <div class="tag">Crypto · <span class="pts">100 pts</span></div>
+      <h2>03 · Alphabet Soup</h2>
+      <p>We intercepted this message. Letters, numbers, and an equals sign at the end... that ending is a big clue.</p>
+      <div class="payload">RUNDe2I0c2U2NF8xc19uMHRfM25jcnlwdDEwbn0=</div>
+      <details class="hint"><summary>Hint</summary><div>This is <b>Base64</b>, an encoding (not encryption). Open CyberChef, drag in <b>From Base64</b>, paste the message into Input.</div></details>
+      <form class="sub"><input placeholder="ECC{...}" autocomplete="off" spellcheck="false"><button>Submit</button></form>
+      <div class="msg"></div>
+    </div>
+
+    <!-- ===== Challenge 4 ===== -->
+    <div class="card" data-id="c4" data-pts="100">
+      <div class="tag">Crypto · <span class="pts">100 pts</span></div>
+      <h2>04 · Caesar's Salad</h2>
+      <p>Julius Caesar shifted every letter to hide his messages. This one is shifted too. Notice how <code>RPP</code> sits where <code>ECC</code> should be.</p>
+      <div class="payload">RPP{e0g13_e0haq_4aq_e0haq}</div>
+      <details class="hint"><summary>Hint</summary><div>R→E is a shift of 13. Try the <b>ROT13</b> operation in CyberChef. Numbers and symbols don't move.</div></details>
+      <form class="sub"><input placeholder="ECC{...}" autocomplete="off" spellcheck="false"><button>Submit</button></form>
+      <div class="msg"></div>
+    </div>
+
+    <!-- ===== Challenge 5 ===== -->
+    <div class="card" data-id="c5" data-pts="150">
+      <div class="tag">Web · <span class="pts">150 pts</span></div>
+      <h2>05 · Locked Button</h2>
+      <p>Only club officers are allowed to claim the coin, so the button is disabled for you. Is it, though?</p>
+      <div class="vault">
+        <button id="claim" disabled>Claim coin (officers only)</button>
+        <div class="reveal" id="claimOut"></div>
+      </div>
+      <details class="hint"><summary>Hint</summary><div>Right-click the button → <b>Inspect</b>. In the Elements panel, find the word <code>disabled</code> on the button tag, double-click it, delete it, press Enter. Now click the button.</div></details>
+      <form class="sub"><input placeholder="ECC{...}" autocomplete="off" spellcheck="false"><button>Submit</button></form>
+      <div class="msg"></div>
+    </div>
+
+    <!-- ===== Challenge 6 ===== -->
+    <div class="card" data-id="c6" data-pts="200">
+      <div class="tag">Web · <span class="pts">200 pts</span></div>
+      <h2>06 · Admin Login</h2>
+      <p>The admin panel checks your password. The check happens right here in your browser, which means the answer has to be somewhere in the page code...</p>
+      <div class="vault">
+        <label for="pw">Admin password</label>
+        <input id="pw" type="password" autocomplete="off">
+        <button id="loginBtn">Log in</button>
+        <div class="reveal" id="loginOut"></div>
+      </div>
+      <details class="hint"><summary>Hint</summary><div>Inspect the page and scroll to the <code>&lt;script&gt;</code> near the bottom of the Elements panel. Find the function called <code>checkPassword</code>. The password is stored backwards.</div></details>
+      <form class="sub"><input placeholder="ECC{...}" autocomplete="off" spellcheck="false"><button>Submit</button></form>
+      <div class="msg"></div>
+    </div>
+
+  </div>
+
+  <div class="win" id="win">
+    <h2>ALL 6 SOLVED</h2>
+    <p>Raise your hand and show this screen to a club officer.</p>
+    <div class="code" id="wincode"></div>
+    <p class="sub" id="wintime"></p>
+  </div>
+
+  <footer>
+    Built for the Computing &amp; Cyber Security Club CTF 101 workshop. Next up: the National Cyber League in spring. Join us on Discord.
+    <button class="reset" id="reset">reset my progress</button>
+  </footer>
+</div>
+
+<script>
+  // ---- Flag checker: stores only SHA-256 hashes, so reading this won't give you the flags ----
+  const HASHES = {
+    c0:"68ee838fad504701a1cf92e37ba4e6f6c4664a1d94860bed0cd010bdf0cd3dce",
+    c1:"18fb02feba18507168beafc3c188217f57294b095568de50749fb930744b99f7",
+    c2:"6fe3b039c443a12b0d192ed71e46eb4ca8304bda29a8e47c1e36a75e848bd93a",
+    c3:"8dca41858d7afe03ce8e7c2fcc9c317b84cc35153f8a8dcb0d945baed8da3ac3",
+    c4:"6956b1cc5e07220a15e182f6ef7efcb9d857513cf9f1bcec9ae9e3da9c136bf5",
+    c5:"1c6003bd9974e3c48b70178cfe1b43f74ca724133993ccddd7164b62cae7e168",
+    c6:"bab52568947d0437d863c63be932aa1b9f3f6f1104f64ed1a288d3d7235324e9"
+  };
+  const solved = new Set();
+  let store = null;
+  try { store = window.localStorage; JSON.parse(store.getItem("ctf101") || "[]").forEach(id => solved.add(id)); } catch(e) { store = null; }
+  function save(){ try { store && store.setItem("ctf101", JSON.stringify([...solved])); } catch(e){} }
+
+  async function sha256(s){
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,"0")).join("");
+  }
+  const xorDecode = arr => arr.map(n => String.fromCharCode(n ^ 42)).join("");
+
+  function render(){
+    let pts = 0, n = 0;
+    document.querySelectorAll(".card").forEach(c => {
+      const on = solved.has(c.dataset.id);
+      c.classList.toggle("solved", on);
+      if (on){ pts += +c.dataset.pts; if (c.dataset.id !== "c0") n++; }
+    });
+    document.getElementById("pts").textContent = pts;
+    document.getElementById("cnt").textContent = n;
+    document.getElementById("barfill").style.width = (n/6*100) + "%";
+    const all = ["c1","c2","c3","c4","c5","c6"].every(id => solved.has(id));
+    const win = document.getElementById("win");
+    if (all && !win.classList.contains("show")){
+      win.classList.add("show");
+      sha256([...solved].sort().join("|")).then(h => {
+        document.getElementById("wincode").textContent = "WINNER-" + h.slice(0,6).toUpperCase();
+      });
+      document.getElementById("wintime").textContent = "Finished at " + new Date().toLocaleTimeString();
+    }
+    if (!all) win.classList.remove("show");
+  }
+
+  document.querySelectorAll(".card").forEach(card => {
+    const form = card.querySelector("form.sub"), input = form.querySelector("input"), msg = card.querySelector(".msg");
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      const guess = input.value.trim();
+      if (!guess) return;
+      const h = await sha256(guess);
+      if (h === HASHES[card.dataset.id]){
+        solved.add(card.dataset.id); save(); render();
+        msg.className = "msg ok"; msg.textContent = "Correct! +" + card.dataset.pts + " pts";
+      } else {
+        msg.className = "msg bad";
+        msg.textContent = /^ECC\{.*\}$/.test(guess) ? "Nope. Check for typos (flags are case-sensitive)." : "Flags look like ECC{...}";
+      }
+    });
+  });
+
+  // ---- Challenge 5 ----
+  document.getElementById("claim").addEventListener("click", () => {
+    document.getElementById("claimOut").textContent =
+      xorDecode([111,105,105,81,78,27,89,30,72,70,25,78,117,78,26,25,89,68,94,117,71,25,30,68,117,89,30,76,25,87]);
+  });
+
+  // ---- Challenge 6 ----
+  function checkPassword(attempt){
+    const secret = "!sr01rr4w_0g".split("").reverse().join("");
+    return attempt === secret;
+  }
+  function login(){
+    const out = document.getElementById("loginOut");
+    if (checkPassword(document.getElementById("pw").value)){
+      out.style.color = "var(--amber)";
+      out.textContent = "Welcome, admin. " + xorDecode([111,105,105,81,68,25,92,25,88,117,94,88,95,31,94,117,94,66,25,117,73,70,27,25,68,94,87]);
+    } else {
+      out.style.color = "var(--pink)";
+      out.textContent = "ACCESS DENIED";
+    }
+  }
+  document.getElementById("loginBtn").addEventListener("click", login);
+  document.getElementById("pw").addEventListener("keydown", e => { if (e.key === "Enter") login(); });
+
+  document.getElementById("reset").addEventListener("click", () => { solved.clear(); save(); render();
+    document.querySelectorAll(".msg").forEach(m => m.textContent = ""); });
+
+  render();
+</script>
+</body>
+</html>
